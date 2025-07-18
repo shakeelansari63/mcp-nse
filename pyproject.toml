@@ -1,0 +1,11 @@
+[project]
+name = "mcp-nse"
+version = "0.1.0"
+description = "MCP Server for NSE India"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.10.5",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.7",
+]
