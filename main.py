@@ -1,4 +1,4 @@
-from fastmcp import FastMCP, Context
+from fastmcp import FastMCP
 import config as conf
 from nse_http import NSEHttpClient
 from models import MarketStatusApiResp, MarketStatusMcp
