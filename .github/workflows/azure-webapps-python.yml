@@ -20,13 +20,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python version
+      - name: Set UV environment
         uses: astral-sh/setup-uv@v6
         with:
           version: ">=0.8.0"
 
+      - name: Generate Requirements.txt
+        run: |
+          uv pip compile pyproject.toml -o requirements.txt
+
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+            python-version: "3.12"
+
+      - name: Create and start virtual environment
+        run: |
+            python -m venv venv
+            source venv/bin/activate
+
       - name: Install dependencies
-        run: uv sync
+        run: pip install -r requirements.txt
       
       - name: Login to Azure
         uses: azure/login@v2
