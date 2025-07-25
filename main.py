@@ -1,8 +1,13 @@
 from fastmcp import FastMCP
 import config as conf
 from nse_http import NSEHttpClient
-from models import MarketStatusApiResp, MarketStatusMcp
-from typing import Mapping, Any
+from typing import Any
+from models import (
+    MarketStatusApiResp,
+    MarketStatusMcp,
+    MarketPreOpenMcp,
+    MarketPreOpenApiResponse,
+)
 
 mcp = FastMCP()
 
@@ -21,7 +26,7 @@ async def check_market_status() -> list[MarketStatusMcp] | str:
     Debt
     Currency Future
     """
-    data = nse_client.get_data(conf.MARKET_STATUS_URL)
+    data = nse_client.get_nse_data(conf.MARKET_STATUS_URL)
     if data is None:
         return "Unable to get Data from NSE API"
 
@@ -41,6 +46,22 @@ async def check_market_status() -> list[MarketStatusMcp] | str:
 
 
 @mcp.tool()
+def get_market_pre_open_data() -> list[MarketPreOpenMcp] | str:
+    """
+    Returns the Pre-Open Market Data for all the markets.
+    """
+    data = nse_client.get_nse_data(conf.MARKET_PRE_OPEN_URL)
+    if data is None:
+        return "Unable to fetch Pre-Open Market Data from NSE"
+
+    market_data = MarketPreOpenApiResponse.model_validate(data)
+    return [
+        MarketPreOpenMcp.model_validate(d.metadata.model_dump())
+        for d in market_data.data
+    ]
+
+
+@mcp.tool()
 def get_live_stock_price(symbol: str):
     """
     Returns the current live price of Stock registered in NSE.
@@ -51,7 +72,7 @@ def get_live_stock_price(symbol: str):
     :resp
         Current stock price from Market. This will return the closing price if Market is close
     """
-    data = nse_client.get_data(f"{conf.STOCK_QUOTE_URL}?symbol={symbol.upper()}")
+    data = nse_client.get_nse_data(conf.STOCK_QUOTE_URL, {"symbol": symbol})
     print(data)
 
 

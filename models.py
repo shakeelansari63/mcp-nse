@@ -1,7 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from typing import Any
 
 
-class MarketState(BaseModel):
+class FlexibleBaseModel(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+
+class MarketState(FlexibleBaseModel):
     market: str
     marketStatus: str
     tradeDate: str
@@ -12,12 +17,58 @@ class MarketState(BaseModel):
     marketStatusMessage: str
 
 
-class MarketStatusApiResp(BaseModel):
+class MarketStatusApiResp(FlexibleBaseModel):
     marketState: list[MarketState]
 
 
-class MarketStatusMcp(BaseModel):
+class MarketStatusMcp(FlexibleBaseModel):
     market: str
     marketStatus: str
     tradeDate: str
     marketStatusMessage: str
+
+
+class MarketPreOpenApiResponseMetadata(FlexibleBaseModel):
+    symbol: str | None
+    identifier: str | None
+    purpose: Any
+    lastPrice: float | None
+    change: float | None
+    pChange: float | None
+    previousClose: float | None
+    finalQuantity: float | None
+    totalTurnover: float | None
+    marketCap: Any
+    yearHigh: float | None
+    yearLow: float | None
+    iep: float | None
+    chartTodayPath: Any
+
+
+class MarketPreOpenApiResponseData(FlexibleBaseModel):
+    metadata: MarketPreOpenApiResponseMetadata
+    detail: Any
+
+
+class MarketPreOpenApiResponse(FlexibleBaseModel):
+    declines: int | None
+    unchanged: float | None
+    data: list[MarketPreOpenApiResponseData]
+    advances: float | None
+    timestamp: str | None
+    totalTradedValue: float | None
+    totalmarketcap: float | None
+    totalTradedVolume: float | None
+
+
+class MarketPreOpenMcp(FlexibleBaseModel):
+    symbol: str | None
+    identifier: str | None
+    lastPrice: float | None
+    change: float | None
+    pChange: float | None
+    previousClose: float | None
+    finalQuantity: float | None
+    totalTurnover: float | None
+    yearHigh: float | None
+    yearLow: float | None

@@ -1,40 +1,60 @@
-from http.cookiejar import MozillaCookieJar
 import httpx
 from typing import Mapping, Any
 import config as conf
-
-nse_headers: dict[str, str] = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
-    "Accept": "*/*",
-    "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
-    "X-Requested-With": "XMLHttpRequest",
-    "Cache-Control": "no-cache",
-    "Pragma": "no-cache",
-    "Connection": "keep-alive",
-}
+import urllib.parse
 
 
 class NSEHttpClient:
     def __init__(self):
-        # Create Cookie Jar Http Client
-        cookiejar = MozillaCookieJar(filename="my-cookies.txt")
+        self._set_nse_cookies()
+
+    def _set_nse_cookies(self):
+        """
+        This method is used to set the cookies required for NSE API requests.
+        It initializes a session and fetches the cookies from the base URL.
+        """
+        client = httpx.Client()
+        client.headers.update(conf.NSE_HEADER)
+        client.get(conf.COOKIE_URL)
+        self.cookies = client.cookies
+
+    def _check_cookie_expired(self):
+        """
+        This method checks if the cookies have expired.
+        If they have, it reinitializes the session and fetches new cookies.
+        """
+        if not self.cookies or not self.cookies.jar:
+            self._set_nse_cookies()
+
+        for cookie in self.cookies.jar:
+            if cookie.is_expired():
+                self._set_nse_cookies()
+                break
+
+    def _get_http_client(self):
+        """
+        This method returns the HTTP/2 client with the current cookies.
+        It checks if the cookies are expired before returning the client.
+        """
+        self._check_cookie_expired()
+        return httpx.Client(cookies=self.cookies, headers=conf.NSE_HEADER)
+
+    def get_nse_data(self, url: str, params: Mapping[str, str] | None = None) -> Any:
+        """
+        This method fetches data from the given NSE URL.
+        It returns the JSON response if successful, or None if there is an error.
+        """
+        if params is not None and len(params) > 0:
+            url_params = urllib.parse.urlencode(params)
+            url = f"{url}?{url_params}"
         try:
-            cookiejar.load()
-        except FileNotFoundError:
-            pass
-
-        # Create Http Client
-        self.session = httpx.Client(
-            cookies=cookiejar,
-            headers=nse_headers,
-        )
-
-        # Initialize Cookies
-        self.session.get(conf.BASE_URL)
-
-    def get_data(self, url) -> Mapping[str, Any] | None:
-        resp = self.session.get(url)
-        if resp.status_code == 200:
-            return resp.json()
-        print(resp)
-        return None
+            client = self._get_http_client()
+            response = client.get(url)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            print(f"HTTP error occurred: {e}")
+            return None
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
