@@ -20,8 +20,8 @@
 name: Build and deploy Python app to Azure Web App
 
 env:
-  AZURE_WEBAPP_NAME: your-app-name  # set this to the name of your Azure Web App
-  PYTHON_VERSION: '3.8'              # set this to the Python version to use
+  AZURE_WEBAPP_NAME: nse-mcp-tools  # set this to the name of your Azure Web App
+  PYTHON_VERSION: '3.12'              # set this to the Python version to use
 
 on:
   push:
@@ -52,7 +52,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv sync
+          uv pip install --system pyproject.toml
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -63,7 +63,6 @@ jobs:
           path: |
             .
             !venv/
-            !.venv/
 
   deploy:
     permissions:
