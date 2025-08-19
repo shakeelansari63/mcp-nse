@@ -1,79 +1,85 @@
 from fastmcp import FastMCP
-import config as conf
-from nse_http import NSEHttpClient
-from typing import Any
-from models import (
-    MarketStatusApiResp,
-    MarketStatusMcp,
-    MarketPreOpenMcp,
-    MarketPreOpenApiResponse,
-)
+from helper import get_market_state, get_all_market_pre_open, get_stock_details
+from models import MarketStatusMcp, MarketPreOpenMcp, StockDetailResponse
 
 mcp = FastMCP()
 
 
-nse_client = NSEHttpClient()
-
-
 # Tool
 @mcp.tool()
-async def check_market_status() -> list[MarketStatusMcp] | str:
+async def check_equity_market_status() -> str:
     """
-    Check whether the Market is up or not. Returns a Json value indicating market status for various markets like
-    Capital/Equity
-    Currency
-    Commodity
-    Debt
-    Currency Future
+    Check whether the Equity / Capital Market is up or not. Returns a string indicating the market status.
     """
-    data = nse_client.get_nse_data(conf.MARKET_STATUS_URL)
-    if data is None:
-        return "Unable to get Data from NSE API"
+    market_state: list[MarketStatusMcp] | None = get_market_state()
 
-    market_state = MarketStatusApiResp.model_validate(data)
+    if market_state is None:
+        return "Unable to fetch Market Status from NSE"
 
-    resp_market_state = [
-        MarketStatusMcp(
-            market=status.market,
-            marketStatus=status.marketStatus,
-            tradeDate=status.tradeDate,
-            marketStatusMessage=status.marketStatusMessage,
-        )
-        for status in market_state.marketState
-    ]
-
-    return resp_market_state
+    equity_market_state = list(
+        filter(lambda x: x.market == "Capital Market", market_state)
+    )[0]
+    return equity_market_state.marketStatus
 
 
 @mcp.tool()
-def get_market_pre_open_data() -> list[MarketPreOpenMcp] | str:
+def get_all_market_symbols() -> list[str | None] | str:
     """
-    Returns the Pre-Open Market Data for all the markets.
+    Returns the list of all symbols registered in NSE.
     """
-    data = nse_client.get_nse_data(conf.MARKET_PRE_OPEN_URL)
-    if data is None:
-        return "Unable to fetch Pre-Open Market Data from NSE"
+    preopen_data: list[MarketPreOpenMcp] | None = get_all_market_pre_open()
 
-    market_data = MarketPreOpenApiResponse.model_validate(data)
-    return [
-        MarketPreOpenMcp.model_validate(d.metadata.model_dump())
-        for d in market_data.data
-    ]
+    if preopen_data is None:
+        return "Unable to fetch Symbols from NSE"
+
+    return [d.symbol for d in preopen_data]
 
 
 @mcp.tool()
-def get_live_stock_price(symbol: str):
+def get_stock_closing_price(symbol: str) -> str:
+    """
+    Returns the closing price of the given stock symbol.
+
+    :params
+        symbol: Symbol / Code of Stock whose closing price is requested
+
+    :resp
+        Closing price of the stock from Market.
+    """
+    preopen_data: list[MarketPreOpenMcp] | None = get_all_market_pre_open()
+
+    if preopen_data is None:
+        return "Unable to fetch Symbols from NSE"
+
+    price = None
+
+    for d in preopen_data:
+        if d.symbol == symbol:
+            price = d.previousClose
+
+    if price is None:
+        return f"Symbol {symbol} not found in NSE Pre-Open Market Data"
+
+    return f"Closing Price of {symbol} is INR {price}"
+
+
+@mcp.tool()
+def get_live_stock_price(symbol: str) -> str:
     """
     Returns the current live price of Stock registered in NSE.
 
     :params
-        symbol: Symbolk / Code of Stock whose price is requested
+        symbol: Symbol / Code of Stock whose price is requested
 
     :resp
-        Current stock price from Market. This will return the closing price if Market is close
+        Current stock price from Market.
     """
-    data = nse_client.get_nse_data(conf.STOCK_QUOTE_URL, {"symbol": symbol})
-    print(data)
+    stock_detail: StockDetailResponse | None = get_stock_details(symbol)
+
+    if stock_detail is None:
+        return "Unable to fetch Stock Data from NSE"
+
+    return f"Current Price of {symbol} is INR {stock_detail.priceInfo.lastPrice}"
 
 
 if __name__ == "__main__":

@@ -47,6 +47,7 @@ class NSEHttpClient:
         if params is not None and len(params) > 0:
             url_params = urllib.parse.urlencode(params)
             url = f"{url}?{url_params}"
+
         try:
             client = self._get_http_client()
             response = client.get(url)

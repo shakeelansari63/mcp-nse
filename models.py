@@ -72,3 +72,126 @@ class MarketPreOpenMcp(FlexibleBaseModel):
     totalTurnover: float | None
     yearHigh: float | None
     yearLow: float | None
+
+
+class StockInfo(FlexibleBaseModel):
+    symbol: str
+    companyName: str
+    industry: str
+    activeSeries: list[str]
+    debtSeries: list
+    isFNOSec: bool
+    isCASec: bool
+    isSLBSec: bool
+    isDebtSec: bool
+    isSuspended: bool
+    tempSuspendedSeries: list
+    isETFSec: bool
+    isDelisted: bool
+    isin: str
+    slb_isin: str
+    listingDate: str
+    isMunicipalBond: bool
+    isHybridSymbol: bool
+    isTop10: bool
+    identifier: str
+
+
+class Surveillance(FlexibleBaseModel):
+    surv: Any
+    desc: Any
+
+
+class IntraDayHighLow(FlexibleBaseModel):
+    min: float
+    max: float
+    value: float
+
+
+class WeekHighLow(FlexibleBaseModel):
+    min: float
+    minDate: str
+    max: float
+    maxDate: str
+    value: float
+
+
+class PriceInfo(FlexibleBaseModel):
+    lastPrice: float
+    change: float
+    pChange: float
+    previousClose: float
+    open: float
+    close: float
+    vwap: float
+    stockIndClosePrice: float
+    lowerCP: str
+    upperCP: str
+    pPriceBand: str
+    basePrice: float
+    intraDayHighLow: IntraDayHighLow
+    weekHighLow: WeekHighLow
+    iNavValue: Any
+    checkINAV: bool
+    tickSize: float
+    ieq: str
+
+
+class IndustryInfo(FlexibleBaseModel):
+    macro: str
+    sector: str
+    industry: str
+    basicIndustry: str
+
+
+class PreopenItem(FlexibleBaseModel):
+    price: float
+    buyQty: int
+    sellQty: int
+    iep: bool | None = None
+
+
+class Ato(FlexibleBaseModel):
+    buy: int
+    sell: int
+
+
+class PreOpenMarket(FlexibleBaseModel):
+    preopen: list[PreopenItem]
+    ato: Ato
+    IEP: float
+    totalTradedVolume: int
+    finalPrice: float
+    finalQuantity: int
+    lastUpdateTime: str
+    totalBuyQuantity: int
+    totalSellQuantity: int
+    atoBuyQty: int
+    atoSellQty: int
+    Change: float
+    perChange: float
+    prevClose: float
+
+
+class StockDetailResponse(FlexibleBaseModel):
+    info: StockInfo
+    metadata: Any
+    securityInfo: Any
+    sddDetails: Any
+    currentMarketType: str
+    priceInfo: PriceInfo
+    industryInfo: IndustryInfo
+    preOpenMarket: PreOpenMarket
+
+
+class StockDetailMcpResponse(FlexibleBaseModel):
+    info: StockInfo
+    currentMarketType: str
+    priceInfo: PriceInfo
+    industryInfo: IndustryInfo
+    preOpenMarket: PreOpenMarket
+
+
+class MarketSymbolMcpResponse(FlexibleBaseModel):
+    symbol: str
+    identifier: str
