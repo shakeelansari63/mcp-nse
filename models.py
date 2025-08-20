@@ -195,3 +195,57 @@ class StockDetailMcpResponse(FlexibleBaseModel):
 class MarketSymbolMcpResponse(FlexibleBaseModel):
     symbol: str
     identifier: str
+
+
+class Stock52weekAnalysis(FlexibleBaseModel):
+    symbol: str
+    series: str
+    comapnyName: str
+    new52WHL: float
+    prev52WHL: float
+    prevHLDate: str
+    ltp: float
+    prevClose: float
+    change: float
+    pChange: float
+
+
+class Stock52WeekHighResponse(FlexibleBaseModel):
+    high: float
+    data: list[Stock52weekAnalysis]
+    timestamp: str | None = None
+
+
+class Stock52WeekLowResponse(FlexibleBaseModel):
+    low: float
+    data: list[Stock52weekAnalysis]
+    timestamp: str | None = None
+
+
+class StockWeeklyVolumeGainers(FlexibleBaseModel):
+    symbol: str
+    companyName: str
+    volume: float
+    week1AvgVolume: float
+    week1volChange: float
+    week2AvgVolume: float
+    week2volChange: float
+    ltp: float
+    pChange: float
+    turnover: float
+
+
+class StockWeeklyVolumeGainerResponse(FlexibleBaseModel):
+    data: list[StockWeeklyVolumeGainers]
+    timestamp: str | None = None
+
+
+class NSECompaniesList(FlexibleBaseModel):
+    symbol: str
+    companyName: str
+
+
+class NSECompanyListWithMatchScore(FlexibleBaseModel):
+    symbol: str
+    companyName: str
+    score: int
