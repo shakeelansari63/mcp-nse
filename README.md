@@ -19,4 +19,4 @@ DANGEROUSLY_OMIT_AUTH=true npx @modelcontextprotocol/inspector
 ### Credits
 
 This Server was made possible by hard work from [maanavshah/stock-market-india](https://github.com/maanavshah/stock-market-india) project.
-Go ahead and give some love and Start to that project as well.
+Go ahead and give some love and Stars to that project as well.
