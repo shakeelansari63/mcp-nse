@@ -248,4 +248,5 @@ class NSECompaniesList(FlexibleBaseModel):
 class NSECompanyListWithMatchScore(FlexibleBaseModel):
     symbol: str
     companyName: str
-    score: int
+    nameScore: int
+    symbolScore: int

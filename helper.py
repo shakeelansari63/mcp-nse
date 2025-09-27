@@ -1,6 +1,7 @@
 import config as conf
 from nse_http import NSEHttpClient
 import httpx
+import re
 from models import (
     MarketStatusApiResp,
     MarketStatusMcp,
@@ -22,6 +23,17 @@ from bs4 import BeautifulSoup
 def _get_nse_client() -> NSEHttpClient:
     nse_client = NSEHttpClient()
     return nse_client
+
+
+def _get_url_soup(url: str) -> BeautifulSoup | None:
+    client = httpx.Client()
+    response = client.get(url)
+    if response.status_code != 200:
+        print(f"Failed to fetch URL: {url}")
+        return None
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    return soup
 
 
 def get_market_state() -> list[MarketStatusMcp] | None:
@@ -92,17 +104,62 @@ def get_weekly_volume_gainers() -> list[StockWeeklyVolumeGainers] | None:
     return data.data
 
 
-def get_nse_companies_list_from_wikipedia() -> list[NSECompaniesList] | None:
-    client = httpx.Client()
-    response = client.get(conf.NSE_COMPANIES_WIKIPEDIA_URL)
-    if response.status_code != 200:
-        print("Failed to fetch NSE companies list from Wikipedia")
+def get_nse_company_list_from_rediff() -> list[NSECompaniesList] | None:
+    soup = _get_url_soup(conf.NSE_COMPANIES_LIST_REDIFF_URL)
+    if soup is None:
         return None
 
     companies_list: list[NSECompaniesList] = []
 
-    # Parse the HTML content
-    soup = BeautifulSoup(response.text, "html.parser")
+    paginator = soup.find("table", {"class": "pagination-container-company"})
+    paginator_message = paginator.find("td").text.strip()  # type: ignore
+    total_companies = re.findall(r"Showing 1 - 200 of (\d+)", paginator_message)
+
+    if total_companies:
+        total_companies = int(total_companies[0])
+    else:
+        print("Failed to extract total companies count")
+        return None
+
+    last_page_start = ((total_companies // 200) * 200) + 1
+    all_pages_range = f"{last_page_start + 200}-{last_page_start + 399}"
+
+    # Get All Companies
+    all_coompanies_soup = _get_url_soup(
+        f"{conf.NSE_COMPANIES_LIST_REDIFF_URL}{all_pages_range}"
+    )
+
+    # Get Data Table
+    companies_tables = all_coompanies_soup.find_all("table", {"class": "dataTable"})  # type: ignore
+
+    # For every table find rows
+    for companies_table in companies_tables:
+        rows = companies_table.find_all("tr")  # type: ignore
+
+        for row in rows:
+            cols = row.find_all("td")  # type: ignore
+
+            # Continue if there are data columns less than 2
+            if len(cols) < 2:
+                continue
+
+            symbol = cols[0].text.strip()
+            company_name = cols[1].text.strip()
+
+            companies_list.append(
+                NSECompaniesList(symbol=symbol, companyName=company_name)
+            )
+
+    return companies_list
+
+
+def get_nse_companies_list_from_wikipedia() -> list[NSECompaniesList] | None:
+    soup = _get_url_soup(conf.NSE_COMPANIES_WIKIPEDIA_URL)
+    if soup is None:
+        return None
+
+    companies_list: list[NSECompaniesList] = []
+
     tables = soup.find_all("table")
 
     for table in tables:
